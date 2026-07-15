@@ -22,7 +22,9 @@ class MapParser:
                                      "restricted", "priority", "blocked"]
         self.allow_color = {"red", "blue", "green", "gray",
                             "yellow", "orange", "cyan", "purple",
-                            "brown", "lime", "magenta", "gold"}
+                            "brown", "lime", "magenta", "gold",
+                            "black", "maroon", "darkred", "violet",
+                            "crimson", "rainbow"}
 
     def _parse_metadata(self, props_str: str, ln: int) -> dict[str, str]:
         result: dict[str, str] = {}
