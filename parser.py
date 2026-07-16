@@ -10,6 +10,7 @@ class ParseError(ValueError):
 class MapParser:
     """Parser for official map text files with strict validation"""
     def __init__(self) -> None:
+        """init regex and colors and extra data"""
         self.ZONE_PAT = re.compile((
             r"^(hub|start_hub|end_hub):\s*(\w+)\s+(-?\d+)\s+(-?\d+)"
             r"(?:\s+\[(.*)\])?$"))
@@ -20,13 +21,28 @@ class MapParser:
                                         "max_link_capacity"]
         self.type_zone: list[str] = ["normal",
                                      "restricted", "priority", "blocked"]
-        self.allow_color = {"red", "blue", "green", "gray",
-                            "yellow", "orange", "cyan", "purple",
-                            "brown", "lime", "magenta", "gold",
-                            "black", "maroon", "darkred", "violet",
-                            "crimson", "rainbow"}
+        self.allow_color = {
+            "red", "blue", "green", "gray",
+            "yellow", "orange", "cyan", "purple",
+            "brown", "lime", "magenta", "gold",
+            "black", "maroon", "darkred", "violet",
+            "crimson", "rainbow",
+
+            "white", "silver", "navy", "teal",
+            "olive", "aqua", "fuchsia", "pink",
+            "hotpink", "deeppink", "lightblue",
+            "skyblue", "deepskyblue", "darkblue",
+            "lightgreen", "darkgreen", "forestgreen",
+            "springgreen", "turquoise", "indigo",
+            "beige", "tan", "khaki", "coral",
+            "salmon", "tomato", "chocolate",
+            "sienna", "peru", "plum", "orchid",
+            "lavender", "ivory", "snow",
+            "wheat", "azure"
+        }
 
     def _parse_metadata(self, props_str: str, ln: int) -> dict[str, str]:
+        """method parse metadata"""
         result: dict[str, str] = {}
         if not props_str.strip():
             return result
@@ -42,8 +58,10 @@ class MapParser:
         return result
 
     def parse_file(self, file_path: str) -> tuple[int, str, str, Graph]:
+        """method load and parse map file"""
         flight_map = Graph()
         list_coords: set[tuple[int, int]] = set()
+        existing_connections: set[tuple[str, str]] = set()
 
         try:
             with open(file_path, "r", encoding="utf-8") as file:
@@ -158,6 +176,15 @@ class MapParser:
                             self._err(f"Unknown zone '{zone_a}'", ln)
                         if zone_b not in flight_map.zones:
                             self._err(f"Unknown zone '{zone_b}'", ln)
+                        # conn_key = tuple(sorted([zone_a, zone_b]))
+                        if zone_a < zone_b:
+                            conn_key = (zone_a, zone_b)
+                        else:
+                            conn_key = (zone_b, zone_a)
+                        if conn_key in existing_connections:
+                            self._err(f"Duplicate conc: {zone_a} and {zone_b}",
+                                      ln)
+                        existing_connections.add(conn_key)
 
                         new_conn = Connection(
                             node_a=zone_a,
@@ -184,6 +211,7 @@ class MapParser:
 
     @staticmethod
     def _err(msg: str, nl: int) -> None:
+        """method raise Parse Error"""
         if nl == -1:
             raise ParseError(f"Error: {msg}")
         raise ParseError(f"Line: {nl}\nError: {msg}")

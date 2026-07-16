@@ -44,14 +44,14 @@ class Graph:
 
     @property
     def start_zone(self) -> str:
-        if self.start is None:
-            raise ValueError("Missing start_hub assignment in the map file")
+        "method return start zone"
+        assert self.start is not None
         return self.start
 
     @property
     def end_zone(self) -> str:
-        if self.end is None:
-            raise ValueError("Missing end_hub assignment in the map file")
+        """method return end zone"""
+        assert self.end is not None
         return self.end
 
     def add_zone(self, zone: Zone) -> None:
@@ -68,15 +68,3 @@ class Graph:
 
     def neighbors(self, zone_name: str) -> List[Tuple[Zone, Connection]]:
         return self.adj.get(zone_name, [])
-
-    def __repr__(self) -> str:
-        return (
-            f"Graph(\n"
-            f"  nb_drones={self.nb_drones},\n\n\n"
-            f"  start={self.start},\n\n\n"
-            f"  end={self.end},\n\n\n"
-            f"  zones={self.zones},\n\n\n"
-            f"  links={self.links},\n\n\n"
-            f"  adj={self.adj}\n\n\n"
-            f")"
-        )

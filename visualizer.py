@@ -1,17 +1,15 @@
 from __future__ import annotations
-
 import math
 import sys
 from typing import Dict, List, Optional, Tuple
-
 import pygame
-
 from parser import MapParser
 from pathfinder import MultiPathFinder
 from simulator import Simulation
+from pygame.surface import Surface
 
 # ── colors ──────────────────────────────────────────────────────
-BG = (0, 0, 0)
+BG = (40, 40, 40)
 EDGE_COL = (130, 145, 180)
 EDGE_PATH_COL = (255, 220, 120)
 NODE_BORDER = (0, 0, 0)
@@ -188,23 +186,8 @@ class SimulationVisualizer:
             self._begin_turn()
 
     # ── drawing ─────────────────────────────────────────────────
-    def _zone_color(self, name: str, ztype: str) -> Color:
-        """Return zone color by role / type."""
-        if name == self.start:
-            return COL_START
-        if name == self.end:
-            return COL_END
-        mapping: Dict[str, Color] = {
-            "normal": COL_NORMAL,
-            "priority": COL_PRIORITY,
-            "restricted": COL_RESTRICTED,
-            "blocked": COL_BLOCKED,
-        }
-        return mapping.get(ztype, COL_NORMAL)
 
-
-
-    def _draw_edges(self, surf: pygame.Surface) -> None:
+    def _draw_edges(self, surf: Surface) -> None:
         """Draw graph edges."""
         for a_name, neighbors in self.graph.adj.items():
             ax, ay = self.pos[a_name]
@@ -220,12 +203,18 @@ class SimulationVisualizer:
                 thick = max(1, 2 + conn.max_link_capacity - 1)
                 pygame.draw.line(surf, col, (ax, ay), (bx, by), thick)
 
-    def _draw_nodes(self, surf: pygame.Surface) -> None:
+    def _draw_nodes(self, surf: Surface) -> None:
         """Draw zones as squares."""
         h = NODE_SIZE // 2
         for name, zone in self.graph.zones.items():
             x, y = self.pos[name]
-            col = self._zone_color(name, zone.zone_type)
+            if zone.color == "rainbow":
+                col = pygame.Color(255, 0, 255)
+            else:
+                try:
+                    col = pygame.Color(zone.color)
+                except ValueError:
+                    col = pygame.Color("gray")
             rect = pygame.Rect(x - h, y - h, NODE_SIZE, NODE_SIZE)
             pygame.draw.rect(surf, col, rect)
             pygame.draw.rect(surf, NODE_BORDER, rect, 1)
@@ -251,7 +240,7 @@ class SimulationVisualizer:
         ang = -math.degrees(math.atan2(y2 - y1, x2 - x1))
         return x1 + (x2 - x1) * t, y1 + (y2 - y1) * t, ang
 
-    def _draw_drones(self, surf: pygame.Surface) -> None:
+    def _draw_drones(self, surf: Surface) -> None:
         """Draw all drones using the loaded texture."""
         buckets: Dict[Tuple[int, int], List[int]] = {}
         raw: Dict[int, Tuple[float, float, float]] = {}
@@ -261,7 +250,7 @@ class SimulationVisualizer:
             buckets.setdefault(key, []).append(did)
 
         final: Dict[int, Tuple[float, float, float]] = {}
-        for _bkey, ids in buckets.items():
+        for _, ids in buckets.items():
             if len(ids) == 1:
                 final[ids[0]] = raw[ids[0]]
             else:
@@ -272,7 +261,7 @@ class SimulationVisualizer:
                     oy = math.sin(t) * 12
                     final[d] = (cx + ox, cy + oy, a)
 
-        font_sm = pygame.font.SysFont(None, 18)
+        font_sm = pygame.font.SysFont("", 18)
         sz = self.drone_img.get_width()
         for did in sorted(self.drones):
             x, y, angle = final[did]
@@ -289,20 +278,20 @@ class SimulationVisualizer:
             )
             surf.blit(label, (tag_x + 2, tag_y + 1))
 
-    def _draw_ui(self, surf: pygame.Surface) -> None:
+    def _draw_ui(self, surf: Surface) -> None:
         """Draw turn counter and controls text."""
-        font = pygame.font.SysFont(None, 28)
+        font = pygame.font.SysFont("", 28)
         text = f"Turn: {self.current_turn}"
         if self.finished and self.current_turn > 0:
             text += " (Finished)"
         surf.blit(font.render(text, True, (230, 230, 230)), (20, 20))
 
-        font_sm = pygame.font.SysFont(None, 20)
+        font_sm = pygame.font.SysFont("", 20)
         ctrl = "SPACE: Pause/Play  |  RIGHT: Step"
         surf.blit(font_sm.render(ctrl, True, (150, 150, 150)),
                   (20, HEIGHT - 30))
 
-    def _draw(self, surf: pygame.Surface) -> None:
+    def _draw(self, surf: Surface) -> None:
         """Render one frame."""
         surf.fill(BG)
         self._draw_edges(surf)
@@ -361,4 +350,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except KeyboardInterrupt:
+        print("\nProgram exit\n")
