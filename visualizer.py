@@ -20,9 +20,9 @@ BG = (20, 20, 30)
 # LINK_COLOR: color for the lines connecting zones.
 LINK_COLOR = (50, 50, 65)
 # TEXT_COLOR: color for zone labels and type tags.
-TEXT_COLOR = (220, 220, 220)
+TEXT_COLOR = (225, 225, 225)
 # DRONE_COLOR: bright yellow for drone labels and capacity text.
-DRONE_COLOR = (255, 200, 60)
+DRONE_COLOR = (25, 200, 60)
 # DEFAULT_ZONE: fallback zone color if map has no color attribute.
 DEFAULT_ZONE = (60, 60, 80)
 
@@ -32,11 +32,11 @@ DEFAULT_ZONE = (60, 60, 80)
 # WIDTH, HEIGHT: window size in pixels.
 WIDTH, HEIGHT = 1600, 900
 # ZONE_RADIUS: radius of each zone circle in pixels.
-ZONE_RADIUS = 28
+ZONE_RADIUS = 20
 # DRONE_SIZE: width and height of the drone image in pixels.
-DRONE_SIZE = 32
+# DRONE_SIZE = 35
 # FONT_SIZE: size of the monospace font used for all text.
-FONT_SIZE = 14
+FONT_SIZE = 15
 
 # ── Animation constants ────────────────────────────────────────────
 # ANIM_DURATION: how many seconds the smooth slide takes per turn.
@@ -164,16 +164,14 @@ class Visualizer:
         pygame.init()
 
         # Load the drone image now that pygame is initialized.
-        img_path = os.path.join(os.path.dirname(__file__), "drone.jpg")
-        raw = pygame.image.load(img_path)
-        self.drone_img = pygame.transform.smoothscale(
-            raw, (DRONE_SIZE, DRONE_SIZE)
-        )
+        raw = pygame.image.load("drone.jpg")
+        self.drone_img = pygame.transform.smoothscale(raw, (35, 35))
 
         # Create the window, font, and clock.
         screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("Fly-in • Drone Visualizer")
-        font = pygame.font.SysFont("monospace", FONT_SIZE)
+        font1 = pygame.font.Font("font/f1.ttf", FONT_SIZE)
+        font2 = pygame.font.Font("font/f2.ttf", FONT_SIZE + 5)
         clock = pygame.time.Clock()
 
         running = True
@@ -201,7 +199,7 @@ class Visualizer:
                     self.animating = False
 
             # Redraw everything every frame.
-            self._draw(screen, font)
+            self._draw(screen, font1, font2)
             pygame.display.flip()
 
         pygame.quit()
@@ -239,10 +237,10 @@ class Visualizer:
 
             # Print turn info to terminal.
             moves_txt = "  ".join(self.current_moves)
-            print(f"Turn {self.turn}/{len(self.all_turns)}: {moves_txt}")
+            print(f"Turn {self.turn}\n\033[32m{moves_txt}\033[0m\n")
         else:
             self.finished = True
-            print(f"Turn {self.turn}/{len(self.all_turns)} — DONE")
+            print(f"Total Turn {len(self.all_turns)}")
 
     def _lerp(self, drone_id: int) -> Tuple[int, int]:
         """Linear interpolation between prev and target position.
@@ -257,7 +255,8 @@ class Visualizer:
         y = int(py + (ty - py) * t)
         return (x, y)
 
-    def _draw(self, screen: pygame.Surface, font: pygame.font.Font) -> None:
+    def _draw(self, screen: pygame.Surface, font1: pygame.font.Font,
+              font2: pygame.font.Font) -> None:
         """Render the full scene: background, links, zones, drones."""
         # Clear the screen with the dark background.
         screen.fill(BG)
@@ -278,38 +277,38 @@ class Visualizer:
             # Show capacity number above the zone circle.
             # Start and end zones have infinite capacity → show "∞".
             cap_txt = "∞" if z.is_start or z.is_end else str(z.max_drones)
-            cap_label = font.render(cap_txt, True, DRONE_COLOR)
+            cap_label = font1.render(cap_txt, True, DRONE_COLOR)
             cx = pos[0] - cap_label.get_width() // 2
             cy = pos[1] - ZONE_RADIUS - 34
             screen.blit(cap_label, (cx, cy))
 
             # Show zone name just above the circle.
-            label = font.render(name, True, TEXT_COLOR)
+            label = font1.render(name, True, TEXT_COLOR)
             lx = pos[0] - label.get_width() // 2
             ly = pos[1] - ZONE_RADIUS - 18
             screen.blit(label, (lx, ly))
 
             # Show zone type tag below the circle (only if not normal).
             if z.zone_type != "normal":
-                tag = font.render(z.zone_type, True, TEXT_COLOR)
+                tag = font1.render(z.zone_type, True, TEXT_COLOR)
                 tx = pos[0] - tag.get_width() // 2
                 ty = pos[1] + ZONE_RADIUS + 4
                 screen.blit(tag, (tx, ty))
 
         # ── Draw drones (image + label) ─────────────────────────
-        half = DRONE_SIZE // 2
+        half = 35 // 2
         for drone in self.sim.drones:
             # Use interpolated position for smooth sliding.
             dx, dy = self._lerp(drone.drone_id)
             # Draw the drone image centered on (dx, dy).
             screen.blit(self.drone_img, (dx - half, dy - half))
             # Draw the drone ID label just below the image.
-            d_label = font.render(f"D{drone.drone_id}", True, DRONE_COLOR)
+            d_label = font1.render(f"D{drone.drone_id}", True, DRONE_COLOR)
             screen.blit(d_label, (dx - 8, dy + half + 2))
 
         # ── Turn counter (bottom-left corner) ───────────────────
         turn_txt = f"Turn {self.turn} / {len(self.all_turns)}"
-        turn_label = font.render(turn_txt, True, TEXT_COLOR)
+        turn_label = font2.render(turn_txt, True, TEXT_COLOR)
         screen.blit(turn_label, (10, HEIGHT - 30))
 
 
@@ -326,6 +325,11 @@ def main() -> int:
     except (ParseError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
+    except KeyboardInterrupt:
+        print("Visualzer exit!!")
+        return 1
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":
