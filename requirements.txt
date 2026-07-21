@@ -1,4 +1,0 @@
-pip
-mypy
-flake8
-pygame
