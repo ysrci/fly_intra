@@ -26,25 +26,7 @@ DRONE_COLOR = (255, 200, 60)
 # DEFAULT_ZONE: fallback zone color if map has no color attribute.
 DEFAULT_ZONE = (60, 60, 80)
 
-# COLOR_MAP: translates color names from the map file to RGB tuples.
-# When the map says [color=red], we look up "red" here.
-COLOR_MAP: Dict[str, Tuple[int, int, int]] = {
-    "red": (180, 50, 50), "blue": (50, 120, 200),
-    "green": (40, 180, 80), "yellow": (220, 180, 40),
-    "orange": (220, 140, 30), "cyan": (0, 200, 200),
-    "purple": (140, 60, 180), "magenta": (200, 50, 150),
-    "gold": (218, 165, 32), "lime": (50, 205, 50),
-    "brown": (139, 69, 19), "gray": (128, 128, 128),
-    "pink": (255, 105, 180), "white": (220, 220, 220),
-    "navy": (0, 0, 128), "teal": (0, 128, 128),
-    "coral": (255, 127, 80), "violet": (138, 43, 226),
-    "crimson": (220, 20, 60), "maroon": (128, 0, 0),
-    "darkred": (139, 0, 0), "silver": (192, 192, 192),
-    "olive": (128, 128, 0), "aqua": (0, 255, 255),
-    "indigo": (75, 0, 130), "turquoise": (64, 224, 208),
-    "salmon": (250, 128, 114), "tomato": (255, 99, 71),
-    "black": (30, 30, 40),
-}
+
 
 # ── Layout constants ────────────────────────────────────────────────
 # WIDTH, HEIGHT: window size in pixels.
@@ -66,8 +48,12 @@ FPS = 60
 # ── Helper functions ────────────────────────────────────────────────
 
 def get_zone_color(color_name: str) -> Tuple[int, int, int]:
-    """Look up a zone's color name in COLOR_MAP, return its RGB."""
-    return COLOR_MAP.get(color_name, DEFAULT_ZONE)
+    """Convert a color name to RGB using pygame.Color directly."""
+    try:
+        c = pygame.Color(color_name)
+        return (c.r, c.g, c.b)
+    except ValueError:
+        return DEFAULT_ZONE
 
 
 def build_positions(graph: Graph) -> Dict[str, Tuple[int, int]]:
